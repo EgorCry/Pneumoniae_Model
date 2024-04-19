@@ -3,28 +3,41 @@ from werkzeug.utils import secure_filename
 from image_processoring import handle_uploaded_file, get_image_info, format_time, get_all_images_info
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 import os
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask
+from flask_login import LoginManager
 
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.secret_key = 'Wabalabadubdub'
+db = SQLAlchemy(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 
 
-class User(UserMixin):
-    def __init__(self, id, first_name, last_name, age, gender, country, city):
-        self.id = id
-        self.first_name = first_name
-        self.last_name = last_name
-        self.age = age
-        self.gender = gender
-        self.country = country
-        self.city = city
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(50))
+    last_name = db.Column(db.String(50))
+    age = db.Column(db.Integer)
+    gender = db.Column(db.String(10))
+    country = db.Column(db.String(50))
+    city = db.Column(db.String(50))
+    username = db.Column(db.String(50), unique=True, index=True)
+    password_hash = db.Column(db.String(128))
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
-users = []
-users_by_username = {}
+with app.app_context():
+    db.create_all()
 
 
 @app.route('/')
@@ -35,19 +48,38 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        return redirect(url_for('login'))
+        user = User(
+            first_name=request.form['first_name'],
+            last_name=request.form['last_name'],
+            age=request.form['age'],
+            gender=request.form['gender'],
+            country=request.form['country'],
+            city=request.form['city'],
+            username=request.form['username']
+        )
+        user.set_password(request.form['password'])
+        db.session.add(user)
+        db.session.commit()
+        return redirect(url_for('show_gallery'))
     return render_template('register.html')
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    return None
+    return User.query.get(int(user_id))
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        return redirect(url_for('index'))
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('show_gallery'))
+        else:
+            return 'Неверный логин или пароль'
     return render_template('login.html')
 
 
@@ -65,6 +97,8 @@ def upload_file():
         if file:
             response = handle_uploaded_file(file)
             return redirect(response)
+    else:
+        return render_template('upload.html')
 
 
 @app.route('/<nickname>/<image_number>')
