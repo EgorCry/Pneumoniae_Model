@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Info</title>
+    <style>
+        .container {
+            display: flex;
+            overflow-hidden;
+        }
+        .image-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .info-container {
+            flex: 1;
+            padding: 20px;
+        }
+        img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="image-container">
+            <img src="{{ url_for('user_images', filename=info.image_path) }}" alt="Uploaded Image">
+        </div>
+        <div class="info-container">
+            <p>Имя пользователя: {{ info.username }}</p>
+            <p>{{ info.date }}</p>
+            <p>{{ info.time }}</p>
+            <p>Вероятность предсказания: {{ info.probability }}</p>
+            <p>{{ info.result }}</p>
+            <div class="back-button-container" style="text-align: center; margin-top: 20px;">
+                <a href="{{ url_for('show_gallery') }}" class="back-button">Вернуться в галерею</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

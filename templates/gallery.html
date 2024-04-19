@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Галерея изображений</title>
+    <style>
+        .header {
+            text-align: center;
+            margin-top: 20px; /* Или другой отступ, который вам нужен */
+        }
+        .gallery-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .image-card {
+            flex-basis: calc(20% - 10px);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .image-card img {
+            width: 100%;
+            max-height: 150px;
+            object-fit: contain;
+            cursor: pointer;
+        }
+        .image-card p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: right; padding: 20px;">
+        <a href="{{ url_for('index') }}">Загрузить изображение</a>
+    </div>
+    <div class="header">
+        <h1>История пациента {{ username }}</h1>
+    </div>
+    <div class="gallery-container">
+        {% for image in images %}
+        <div class="image-card" onclick="window.location.href='{{ url_for('show_image_info', nickname=username, image_number=image.number) }}'">
+            <img src="{{ url_for('user_images', filename=image.file_name) }}" alt="Изображение {{ image.number }}">
+            <p>Снимок: {{ image.number }}</p>
+            <p>{{ image.date }}</p>
+            <p>Вероятность: {{ image.probability }}</p>
+            <p>{{ image.result }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
