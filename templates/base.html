@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <div style="position: relative; top: 10px; left: 10px; margin-bottom: 25px">
+        Пользователь: {{ current_user.first_name }} {{ current_user.last_name }}
+    </div>
+    <div style="position: fixed; top: 10px; left: 200px;">
+        <form action="{{ url_for('logout') }}" method="post">
+            <button type="submit">Выйти из аккаунта</button>
+        </form>
+    </div>
+    {% endif %}
+    <div>
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

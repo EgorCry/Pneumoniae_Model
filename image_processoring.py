@@ -7,6 +7,8 @@ import numpy as np
 from keras.models import load_model
 import joblib
 from io import BytesIO
+from flask_login import current_user
+from flask import redirect
 import tensorflow as tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = all messages are logged (default behavior)
@@ -40,7 +42,7 @@ def convert_dicom_to_jpeg(file_stream):
 
 
 def save_image(image, format):
-    nickname = 'test'
+    nickname = f"{current_user.first_name}_{current_user.last_name}"
     image_number = count_user_images(nickname) + 1
     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
@@ -66,8 +68,11 @@ def count_user_images(nickname):
     max_number = 0
     for filename in os.listdir(USER_IMAGES_DIR):
         if filename.startswith(nickname):
-            number = int(filename.split('_')[1])
-            max_number = max(max_number, number)
+            try:
+                number = int(filename.split('_')[2])
+                max_number = max(max_number, number)
+            except ValueError:
+                continue
     return max_number
 
 
@@ -87,8 +92,7 @@ def get_image_info(nickname, image_number):
             probability = parts[-1].rsplit('.', 1)[0]
             time = parts[-2]
             formatted_date_time = format_time(time)
-            result = 'Низкая вероятность пневмонии' if (float(probability) <= 0.12) \
-                else 'Высокая вероятность пневмонии'
+            result = 'Низкая вероятность пневмонии' if float(probability) <= 0.12 else 'Высокая вероятность пневмонии'
             return {
                 'username': nickname,
                 'date': formatted_date_time.get('date'),
@@ -113,24 +117,29 @@ def extract_image_number(filename):
     return int(filename.split('_')[1])
 
 
-def get_all_images_info(nickname):
+def get_all_images_info(first_name, last_name):
     images_info = []
     files = os.listdir(USER_IMAGES_DIR)
-    sorted_files = sorted(files, key=extract_image_number)
+    nickname = first_name + '_' + last_name
+    sorted_files = [f for f in files if f.startswith(nickname + '_')]
     for filename in sorted_files:
-        if filename.startswith(nickname):
-            parts = filename.split('_')
-            image_number = parts[1]
-            date_time_str = parts[2]
-            probability = parts[3].rsplit('.', 1)[0]
-            result = 'Низкая вероятность пневмонии' if (float(probability) <= 0.12) \
-                else 'Высокая вероятность пневмонии'
-            formatted_date_time = format_time(date_time_str)
+        parts = filename.split('_')
+        if len(parts) >= 5:
+            image_number = parts[2]
+            timestamp = parts[3]
+            probability_str = '.'.join([parts[4].split('.')[0], parts[4].split('.')[1]])
+            try:
+                probability = float(probability_str)
+            except ValueError:
+                continue
+
+            formatted_date_time = format_time(timestamp)
+            result = 'Низкая вероятность пневмонии' if probability <= 0.12 else 'Высокая вероятность пневмонии'
             images_info.append({
                 'number': image_number,
                 'date': formatted_date_time.get('date'),
                 'time': formatted_date_time.get('time'),
-                'probability': probability,
+                'probability': f"{probability:.2f}",
                 'file_name': filename,
                 'result': result
             })

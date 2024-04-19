@@ -1,12 +1,13 @@
-from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory
+from flask import Flask, flash, request, render_template, jsonify, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from image_processoring import handle_uploaded_file, get_image_info, format_time, get_all_images_info
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import os
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask
 from flask_login import LoginManager
+from sqlalchemy.exc import IntegrityError
 
 
 app = Flask(__name__)
@@ -48,6 +49,13 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        username = request.form['username']
+        user_exists = User.query.filter_by(username=username).first()
+
+        if user_exists:
+            flash('Это имя пользователя уже занято. Пожалуйста, выберите другое.')
+            return render_template('register.html')
+
         user = User(
             first_name=request.form['first_name'],
             last_name=request.form['last_name'],
@@ -55,12 +63,19 @@ def register():
             gender=request.form['gender'],
             country=request.form['country'],
             city=request.form['city'],
-            username=request.form['username']
+            username=username
         )
         user.set_password(request.form['password'])
         db.session.add(user)
-        db.session.commit()
-        return redirect(url_for('show_gallery'))
+        try:
+            db.session.commit()
+            login_user(user)
+            return redirect(url_for('show_gallery'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Произошла ошибка при регистрации. Пожалуйста, попробуйте снова.')
+            return render_template('register.html')
+
     return render_template('register.html')
 
 
@@ -79,7 +94,8 @@ def login():
             login_user(user)
             return redirect(url_for('show_gallery'))
         else:
-            return 'Неверный логин или пароль'
+            flash('Неверный логин или пароль')
+            return render_template('login.html')
     return render_template('login.html')
 
 
@@ -104,7 +120,7 @@ def upload_file():
 @app.route('/<nickname>/<image_number>')
 @login_required
 def show_image_info(nickname, image_number):
-    # Здесь будет логика для извлечения данных о файле
+    nickname = '_'.join(nickname.split())
     image_info = get_image_info(nickname, image_number)
     return render_template('image_info.html', info=image_info)
 
@@ -118,9 +134,15 @@ def user_images(filename):
 @app.route('/gallery')
 @login_required
 def show_gallery():
-    username = 'test'
-    images_info = get_all_images_info(username)
+    username = f"{current_user.first_name} {current_user.last_name}"
+    images_info = get_all_images_info(current_user.first_name, current_user.last_name)
     return render_template('gallery.html', images=images_info, username=username)
+
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 
 if __name__ == '__main__':
