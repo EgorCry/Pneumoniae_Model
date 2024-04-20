@@ -1,19 +1,21 @@
-from flask import Flask, flash, request, render_template, jsonify, redirect, url_for, send_from_directory
+from flask import Flask, flash, request, render_template, jsonify, redirect, url_for, send_from_directory, session
 from werkzeug.utils import secure_filename
-from image_processoring import handle_uploaded_file, get_image_info, format_time, get_all_images_info
+from image_processoring import handle_uploaded_file, get_image_info, format_time, get_all_images_info, is_doctor
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import os
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask
 from flask_login import LoginManager
 from sqlalchemy.exc import IntegrityError
+from flask_migrate import Migrate
+from functools import wraps
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.secret_key = 'Wabalabadubdub'
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -29,6 +31,7 @@ class User(db.Model, UserMixin):
     city = db.Column(db.String(50))
     username = db.Column(db.String(50), unique=True, index=True)
     password_hash = db.Column(db.String(128))
+    role = db.Column(db.String(20), default='patient')  # 'doctor' для врачей
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -101,7 +104,7 @@ def login():
 
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
-def upload_file():
+def upload_file(patient_id=None):
     if request.method == 'POST':
         if 'image' not in request.files:
             return "Файл не найден", 400
@@ -114,14 +117,17 @@ def upload_file():
             response = handle_uploaded_file(file)
             return redirect(response)
     else:
-        return render_template('upload.html')
+        return render_template('upload.html', patient_id=patient_id)
 
 
-@app.route('/<nickname>/<image_number>')
+@app.route('/user/<int:user_id>/image/<int:image_number>')
 @login_required
-def show_image_info(nickname, image_number):
-    nickname = '_'.join(nickname.split())
-    image_info = get_image_info(nickname, image_number)
+def show_image_info(user_id, image_number):
+    if current_user.role != 'doctor' and current_user.id != user_id:
+        flash('У вас нет доступа к этой галерее.')
+        return redirect(url_for('show_gallery'))
+    user = User.query.get(user_id)
+    image_info = get_image_info(user_id, image_number, user)
     return render_template('image_info.html', info=image_info)
 
 
@@ -134,9 +140,21 @@ def user_images(filename):
 @app.route('/gallery')
 @login_required
 def show_gallery():
+    if current_user.role == 'doctor':
+        return redirect(url_for('doctor_dashboard'))
+    images_info = get_all_images_info(str(current_user.id))
     username = f"{current_user.first_name} {current_user.last_name}"
-    images_info = get_all_images_info(current_user.first_name, current_user.last_name)
     return render_template('gallery.html', images=images_info, username=username)
+
+
+def doctor_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_doctor(current_user):
+            flash('У Вас нет доступа к этому разделу. Возвращаем Вас в раздел галереи.')
+            return redirect(url_for('show_gallery'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @app.route('/logout', methods=['POST'])
@@ -145,5 +163,71 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/doctor')
+@login_required
+@doctor_required
+def doctor_dashboard():
+    patients = User.query.filter_by(role='patient').all()
+    return render_template('doctor_dashboard.html', patients=patients)
+
+
+# Функция для добавления пользователя-врача в базу данных при запуске
+def add_doctor_to_db():
+    # Проверка, существует ли уже пользователь с данным username
+    doctor_exists = User.query.filter_by(username='drhouse').first()
+
+    # Если пользователя нет, создаем нового
+    if not doctor_exists:
+        doctor = User(
+            first_name='Gregory',
+            last_name='House',
+            age=56,
+            gender='Мужчина',
+            country='Russia',
+            city='Moscow',
+            username='drhouse',
+            role='doctor'
+        )
+        doctor.set_password('password')
+
+        db.session.add(doctor)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+
+
+@app.route('/patient_gallery/<int:user_id>')
+@login_required
+@doctor_required
+def patient_gallery(user_id):
+    patient = User.query.get_or_404(user_id)
+    images_info = get_all_images_info(patient.first_name, patient.last_name)
+    username = f"{patient.first_name} {patient.last_name}"
+    return render_template('gallery.html', images=images_info, username=username)
+
+
+@app.route('/doctor/patient/<int:user_id>/image/<int:image_number>')
+@login_required
+@doctor_required
+def doctor_patient_image(user_id, image_number):
+    patient = User.query.get_or_404(user_id)
+    image_info = get_image_info(user_id, image_number, patient)
+    return render_template('image_info.html', info=image_info)
+
+
+@app.route('/doctor/patient_gallery/<int:user_id>')
+@login_required
+@doctor_required
+def doctor_patient_gallery(user_id):
+    patient = User.query.get_or_404(user_id)
+    images_info = get_all_images_info(str(patient.id))
+    username = f"{patient.first_name} {patient.last_name}"
+    return render_template('gallery.html', images=images_info, username=username, is_doctor=True)
+
+
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        add_doctor_to_db()
     app.run(debug=True)

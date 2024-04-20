@@ -16,6 +16,9 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        .alert {
+            color: red;
+        }
         .image-card {
             flex-basis: calc(20% - 10px);
             text-align: center;
@@ -33,6 +36,20 @@
     </style>
 </head>
 <body>
+    {% if is_doctor %}
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('doctor_dashboard') }}">Вернуться к списку пациентов</a>
+    </div>
+    {% endif %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     <div style="text-align: right; padding: 20px;">
         <a href="{{ url_for('upload_file') }}">Загрузить изображение</a>
     </div>
@@ -41,13 +58,19 @@
     </div>
     <div class="gallery-container">
         {% for image in images %}
-        <div class="image-card" onclick="window.location.href='{{ url_for('show_image_info', nickname=username, image_number=image.number) }}'">
-            <img src="{{ url_for('user_images', filename=image.file_name) }}" alt="Изображение {{ image.number }}">
-            <p>Снимок: {{ image.number }}</p>
-            <p>{{ image.date }}</p>
-            <p>Вероятность: {{ image.probability }}</p>
-            <p>{{ image.result }}</p>
-        </div>
+            {% if is_doctor %}
+                <!-- Если пользователь - врач, используем один URL -->
+                <div class="image-card" onclick="window.location.href='{{ url_for('doctor_patient_image', user_id=image.user_id, image_number=image.number) }}'">
+            {% else %}
+                <!-- Если пользователь - пациент, используем другой URL -->
+                <div class="image-card" onclick="window.location.href='{{ url_for('show_image_info', user_id=image.user_id, image_number=image.number) }}'">
+            {% endif %}
+                <img src="{{ url_for('user_images', filename=image.file_name) }}" alt="Изображение {{ image.number }}">
+                <p>Снимок: {{ image.number }}</p>
+                <p>{{ image.date }}</p>
+                <p>Вероятность: {{ image.probability }}</p>
+                <p>{{ image.result }}</p>
+            </div>
         {% endfor %}
     </div>
 </body>

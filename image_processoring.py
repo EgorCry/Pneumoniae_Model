@@ -8,7 +8,7 @@ from keras.models import load_model
 import joblib
 from io import BytesIO
 from flask_login import current_user
-from flask import redirect
+from flask import redirect, url_for
 import tensorflow as tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = all messages are logged (default behavior)
@@ -22,7 +22,8 @@ keras_model = load_model('models/big_dataset_model.keras')
 logistic_model = joblib.load('models/logistic_regression.pkl')
 
 
-def handle_uploaded_file(file):
+def handle_uploaded_file(file, user_id=None):
+    user_id = user_id or current_user.id
     extension = file.filename.rsplit('.', 1)[1].lower()
     if extension in ['jpeg', 'jpg', 'png']:
         image = Image.open(BytesIO(file.read()))
@@ -42,8 +43,8 @@ def convert_dicom_to_jpeg(file_stream):
 
 
 def save_image(image, format):
-    nickname = f"{current_user.first_name}_{current_user.last_name}"
-    image_number = count_user_images(nickname) + 1
+    user_id = current_user.id
+    image_number = str(count_user_images(str(user_id)) + 1)
     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
     prepared_image = prepare_image(image)
@@ -51,7 +52,7 @@ def save_image(image, format):
     calibrated_prediction = logistic_model.predict_proba(predictions)[:, 1]
     probability = round(calibrated_prediction[0], 2)
 
-    filename = f"{nickname}_{image_number}_{current_time}_{probability}.jpeg"
+    filename = f"{user_id}_{image_number}_{current_time}_{probability}.jpeg"
     path = os.path.join(USER_IMAGES_DIR, filename)
 
     if format == 'jpeg':
@@ -59,17 +60,17 @@ def save_image(image, format):
     else:
         image.save(path, 'JPEG')
 
-    redirect_url = f"/{nickname}/{image_number}"
+    redirect_url = url_for('show_image_info', user_id=user_id, image_number=image_number)
     return redirect_url
 
 
-def count_user_images(nickname):
+def count_user_images(user_id_str):
     os.makedirs(USER_IMAGES_DIR, exist_ok=True)
     max_number = 0
     for filename in os.listdir(USER_IMAGES_DIR):
-        if filename.startswith(nickname):
+        if filename.startswith(user_id_str):
             try:
-                number = int(filename.split('_')[2])
+                number = int(filename.split('_')[1])
                 max_number = max(max_number, number)
             except ValueError:
                 continue
@@ -85,9 +86,10 @@ def prepare_image(image):
     return image_array
 
 
-def get_image_info(nickname, image_number):
+def get_image_info(user_id, image_number, user):
+    nickname = f"{user.first_name}_{user.last_name}"
     for filename in os.listdir(USER_IMAGES_DIR):
-        if filename.startswith(f"{nickname}_{image_number}"):
+        if filename.startswith(f"{user_id}_{image_number}"):
             parts = filename.rsplit('_', 3)
             probability = parts[-1].rsplit('.', 1)[0]
             time = parts[-2]
@@ -99,7 +101,14 @@ def get_image_info(nickname, image_number):
                 'time': formatted_date_time.get('time'),
                 'probability': probability,
                 'image_path': filename,
-                'result': result
+                'result': result,
+                'user_id': user_id,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'age': user.age,
+                'gender': user.gender,
+                'country': user.country,
+                'city': user.city
             }
     return None
 
@@ -117,30 +126,32 @@ def extract_image_number(filename):
     return int(filename.split('_')[1])
 
 
-def get_all_images_info(first_name, last_name):
+def get_all_images_info(user_id_str):
     images_info = []
     files = os.listdir(USER_IMAGES_DIR)
-    nickname = first_name + '_' + last_name
-    sorted_files = [f for f in files if f.startswith(nickname + '_')]
+    sorted_files = sorted(
+        (f for f in files if f.startswith(f"{user_id_str}_")),
+        key=lambda x: int(x.split('_')[1])
+    )
     for filename in sorted_files:
         parts = filename.split('_')
-        if len(parts) >= 5:
-            image_number = parts[2]
-            timestamp = parts[3]
-            probability_str = '.'.join([parts[4].split('.')[0], parts[4].split('.')[1]])
-            try:
-                probability = float(probability_str)
-            except ValueError:
-                continue
-
-            formatted_date_time = format_time(timestamp)
-            result = 'Низкая вероятность пневмонии' if probability <= 0.12 else 'Высокая вероятность пневмонии'
-            images_info.append({
-                'number': image_number,
-                'date': formatted_date_time.get('date'),
-                'time': formatted_date_time.get('time'),
-                'probability': f"{probability:.2f}",
-                'file_name': filename,
-                'result': result
-            })
+        image_number = parts[1]
+        timestamp = parts[2]
+        probability_str = '.'.join([parts[3].split('.')[0], parts[3].split('.')[1]])
+        probability = float(probability_str)
+        formatted_date_time = format_time(timestamp)
+        result = 'Низкая вероятность пневмонии' if probability <= 0.12 else 'Высокая вероятность пневмонии'
+        images_info.append({
+            'user_id': user_id_str,  # Включаем user_id
+            'number': image_number,
+            'date': formatted_date_time['date'],
+            'time': formatted_date_time['time'],
+            'probability': f"{probability:.2f}",
+            'file_name': filename,
+            'result': result
+        })
     return images_info
+
+
+def is_doctor(user):
+    return user.role == 'doctor'
