@@ -2,14 +2,12 @@ import os
 from datetime import datetime
 from PIL import Image
 import pydicom
-import hashlib
 import numpy as np
 from keras.models import load_model
 import joblib
 from io import BytesIO
-from flask_login import current_user
-from flask import redirect, url_for
-import tensorflow as tf
+from flask import url_for
+
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = all messages are logged (default behavior)
                                           # 1 = INFO messages are not printed
@@ -26,10 +24,10 @@ def handle_uploaded_file(file, patient=None):
     extension = file.filename.rsplit('.', 1)[1].lower()
     if extension in ['jpeg', 'jpg', 'png']:
         image = Image.open(BytesIO(file.read()))
-        return save_image(image, extension, patient)
+        return save_image(image, patient)
     elif extension == 'dcm':
         image = convert_dicom_to_jpeg(file)
-        return save_image(image, extension, patient)
+        return save_image(image, patient)
     else:
         return "Unsupported file format", 400
 
@@ -41,7 +39,7 @@ def convert_dicom_to_jpeg(file_stream):
     return image
 
 
-def save_image(image, format, patient):
+def save_image(image, patient):
     patient_id = patient.id
     image_number = str(count_user_images(str(patient_id)) + 1)
     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
@@ -92,7 +90,6 @@ def get_image_info(user_id, image_number, user):
             formatted_date_time = format_time(time)
             result = 'Низкая вероятность пневмонии' if float(probability) <= 0.12 else 'Высокая вероятность пневмонии'
             return {
-                'username': nickname,
                 'date': formatted_date_time.get('date'),
                 'time': formatted_date_time.get('time'),
                 'probability': probability,
@@ -102,7 +99,7 @@ def get_image_info(user_id, image_number, user):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'age': user.age,
-                'gender': user.gender,
+                'gender': 'Мужчина' if user.gender == 'male' else 'Женщина',
                 'country': user.country,
                 'city': user.city
             }

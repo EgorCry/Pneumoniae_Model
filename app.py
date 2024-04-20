@@ -1,8 +1,6 @@
-from flask import Flask, flash, request, render_template, jsonify, redirect, url_for, send_from_directory, session
-from werkzeug.utils import secure_filename
-from image_processoring import handle_uploaded_file, get_image_info, format_time, get_all_images_info, is_doctor
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import os
+from flask import Flask, flash, request, render_template, redirect, url_for, send_from_directory, session
+from image_processoring import handle_uploaded_file, get_image_info, get_all_images_info, is_doctor
+from flask_login import UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager
@@ -100,24 +98,6 @@ def login():
             flash('Неверный логин или пароль')
             return render_template('login.html')
     return render_template('login.html')
-
-
-@app.route('/upload', methods=['GET', 'POST'])
-@login_required
-def upload_file(patient_id=None):
-    if request.method == 'POST':
-        if 'image' not in request.files:
-            return "Файл не найден", 400
-
-        file = request.files['image']
-        if file.filename == '':
-            return "Файл не выбран", 400
-
-        if file:
-            response = handle_uploaded_file(file)
-            return redirect(response)
-    else:
-        return render_template('upload.html', patient_id=patient_id)
 
 
 @app.route('/user/<int:user_id>/image/<int:image_number>')
