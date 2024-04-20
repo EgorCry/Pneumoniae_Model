@@ -115,10 +115,6 @@ def format_time(time_str):
     }
 
 
-def extract_image_number(filename):
-    return int(filename.split('_')[1])
-
-
 def get_all_images_info(patient):
     user_id_str = str(patient.id)
     patient_name = patient.first_name + ' ' + patient.last_name
