@@ -46,9 +46,15 @@
             <p>{{ info.time }}</p>
             <p>Вероятность предсказания: {{ info.probability }}</p>
             <p>{{ info.result }}</p>
-            <div class="back-button-container" style="text-align: center; margin-top: 20px;">
-                <a href="{{ url_for('show_gallery') }}" class="back-button">Вернуться в галерею</a>
-            </div>
+            {% if is_doctor %}
+                <div class="back-button-container" style="text-align: center; margin-top: 20px;">
+                    <a href="{{ url_for('doctor_patient_gallery', patient_id=patient.id) }}">Вернуться в галерею</a>
+                </div>
+            {% else %}
+                <div class="back-button-container" style="text-align: center; margin-top: 20px;">
+                    <a href="{{ url_for('show_gallery') }}" class="back-button">Вернуться в галерею</a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </body>

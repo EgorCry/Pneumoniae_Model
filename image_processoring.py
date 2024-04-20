@@ -22,15 +22,14 @@ keras_model = load_model('models/big_dataset_model.keras')
 logistic_model = joblib.load('models/logistic_regression.pkl')
 
 
-def handle_uploaded_file(file, user_id=None):
-    user_id = user_id or current_user.id
+def handle_uploaded_file(file, patient=None):
     extension = file.filename.rsplit('.', 1)[1].lower()
     if extension in ['jpeg', 'jpg', 'png']:
         image = Image.open(BytesIO(file.read()))
-        return save_image(image, extension)
+        return save_image(image, extension, patient)
     elif extension == 'dcm':
-        file = convert_dicom_to_jpeg(file)
-        return save_image(file, extension)
+        image = convert_dicom_to_jpeg(file)
+        return save_image(image, extension, patient)
     else:
         return "Unsupported file format", 400
 
@@ -42,9 +41,9 @@ def convert_dicom_to_jpeg(file_stream):
     return image
 
 
-def save_image(image, format):
-    user_id = current_user.id
-    image_number = str(count_user_images(str(user_id)) + 1)
+def save_image(image, format, patient):
+    patient_id = patient.id
+    image_number = str(count_user_images(str(patient_id)) + 1)
     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
     prepared_image = prepare_image(image)
@@ -52,15 +51,12 @@ def save_image(image, format):
     calibrated_prediction = logistic_model.predict_proba(predictions)[:, 1]
     probability = round(calibrated_prediction[0], 2)
 
-    filename = f"{user_id}_{image_number}_{current_time}_{probability}.jpeg"
+    filename = f"{patient_id}_{image_number}_{current_time}_{probability}.jpeg"
     path = os.path.join(USER_IMAGES_DIR, filename)
 
-    if format == 'jpeg':
-        image.save(path, 'JPEG')
-    else:
-        image.save(path, 'JPEG')
+    image.save(path, 'JPEG')
 
-    redirect_url = url_for('show_image_info', user_id=user_id, image_number=image_number)
+    redirect_url = url_for('doctor_patient_image', user_id=patient_id, image_number=image_number)
     return redirect_url
 
 
@@ -126,7 +122,9 @@ def extract_image_number(filename):
     return int(filename.split('_')[1])
 
 
-def get_all_images_info(user_id_str):
+def get_all_images_info(patient):
+    user_id_str = str(patient.id)
+    patient_name = patient.first_name + ' ' + patient.last_name
     images_info = []
     files = os.listdir(USER_IMAGES_DIR)
     sorted_files = sorted(
@@ -142,7 +140,7 @@ def get_all_images_info(user_id_str):
         formatted_date_time = format_time(timestamp)
         result = 'Низкая вероятность пневмонии' if probability <= 0.12 else 'Высокая вероятность пневмонии'
         images_info.append({
-            'user_id': user_id_str,  # Включаем user_id
+            'user_id': user_id_str,
             'number': image_number,
             'date': formatted_date_time['date'],
             'time': formatted_date_time['time'],
@@ -150,7 +148,7 @@ def get_all_images_info(user_id_str):
             'file_name': filename,
             'result': result
         })
-    return images_info
+    return images_info, patient_name
 
 
 def is_doctor(user):

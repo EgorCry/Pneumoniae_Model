@@ -41,20 +41,13 @@
         <a href="{{ url_for('doctor_dashboard') }}">Вернуться к списку пациентов</a>
     </div>
     {% endif %}
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="alert">
-                {% for message in messages %}
-                    <p>{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-    <div style="text-align: right; padding: 20px;">
-        <a href="{{ url_for('upload_file') }}">Загрузить изображение</a>
-    </div>
+    {% if is_doctor %}
+        <div style="text-align: right; padding: 20px;">
+            <a href="{{ url_for('upload_for_patient', patient_id=patient_id) }}">Загрузить изображение для пациента</a>
+        </div>
+    {% endif %}
     <div class="header">
-        <h1>История пациента {{ username }}</h1>
+        <h1>История пациента {{ patient_name }}</h1>
     </div>
     <div class="gallery-container">
         {% for image in images %}

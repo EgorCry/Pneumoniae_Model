@@ -142,9 +142,9 @@ def user_images(filename):
 def show_gallery():
     if current_user.role == 'doctor':
         return redirect(url_for('doctor_dashboard'))
-    images_info = get_all_images_info(str(current_user.id))
+    images_info, username = get_all_images_info(current_user)
     username = f"{current_user.first_name} {current_user.last_name}"
-    return render_template('gallery.html', images=images_info, username=username)
+    return render_template('gallery.html', images=images_info, patient_name=username)
 
 
 def doctor_required(f):
@@ -197,14 +197,17 @@ def add_doctor_to_db():
             db.session.rollback()
 
 
-@app.route('/patient_gallery/<int:user_id>')
+@app.route('/patient_gallery/<int:patient_id>')
 @login_required
 @doctor_required
-def patient_gallery(user_id):
-    patient = User.query.get_or_404(user_id)
-    images_info = get_all_images_info(patient.first_name, patient.last_name)
+def patient_gallery(patient_id):
+    patient = User.query.get_or_404(patient_id)
+    if patient.role != 'patient':
+        flash('Выбранный пользователь не является пациентом.')
+        return redirect(url_for('doctor_dashboard'))
+    images_info, patient_name = get_all_images_info(patient)
     username = f"{patient.first_name} {patient.last_name}"
-    return render_template('gallery.html', images=images_info, username=username)
+    return render_template('gallery.html', images=images_info, patient_name=patient_name, user_id=patient_id)
 
 
 @app.route('/doctor/patient/<int:user_id>/image/<int:image_number>')
@@ -213,17 +216,39 @@ def patient_gallery(user_id):
 def doctor_patient_image(user_id, image_number):
     patient = User.query.get_or_404(user_id)
     image_info = get_image_info(user_id, image_number, patient)
-    return render_template('image_info.html', info=image_info)
+    return render_template('image_info.html', info=image_info, is_doctor=True, patient=patient)
 
 
-@app.route('/doctor/patient_gallery/<int:user_id>')
+@app.route('/doctor/patient_gallery/<int:patient_id>')
 @login_required
 @doctor_required
-def doctor_patient_gallery(user_id):
-    patient = User.query.get_or_404(user_id)
-    images_info = get_all_images_info(str(patient.id))
-    username = f"{patient.first_name} {patient.last_name}"
-    return render_template('gallery.html', images=images_info, username=username, is_doctor=True)
+def doctor_patient_gallery(patient_id):
+    patient = User.query.get_or_404(patient_id)
+    images_info, patient_name = get_all_images_info(patient)
+    return render_template('gallery.html', images=images_info,
+                           patient_name=patient_name, patient_id=patient_id, is_doctor=True)
+
+
+@app.route('/upload_for_patient/<int:patient_id>', methods=['GET', 'POST'])
+@login_required
+@doctor_required
+def upload_for_patient(patient_id):
+    patient = User.query.get_or_404(patient_id)
+    if request.method == 'POST':
+        if 'image' not in request.files:
+            flash("Файл не найден")
+            return redirect(request.url)
+
+        file = request.files['image']
+        if file.filename == '':
+            flash("Файл не выбран")
+            return redirect(request.url)
+
+        if file:
+            response = handle_uploaded_file(file, patient)
+            return redirect(response)
+    else:
+        return render_template('upload_for_patient.html', patient_id=patient_id)
 
 
 if __name__ == '__main__':

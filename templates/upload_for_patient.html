@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+{% block content %}
+<html lang="ru">
+<head>
+    <title>Загрузка изображения для пациента</title>
+</head>
+<body>
+    <h2>Загрузка изображения для пациента</h2>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    <form action="{{ url_for('upload_for_patient', patient_id=patient_id) }}" method="post" enctype="multipart/form-data">
+        <input type="file" name="image">
+        <input type="submit" value="Загрузить">
+    </form>
+    <div style="margin-top: 20px">
+        <a href="{{ url_for('doctor_patient_gallery', patient_id=patient_id) }}">Вернуться в галерею</a>
+    </div>
+</body>
+{% endblock %}
+</html>

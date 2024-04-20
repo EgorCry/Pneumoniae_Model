@@ -32,7 +32,7 @@
                 <td>{{ patient.country }}</td>
                 <td>{{ patient.city }}</td>
                 <td>
-                    <a href="{{ url_for('doctor_patient_gallery', user_id=patient.id) }}">Просмотреть галерею</a>
+                    <a href="{{ url_for('doctor_patient_gallery', patient_id=patient.id) }}">Просмотреть галерею</a>
                 </td>
             </tr>
             {% endfor %}
