@@ -1,44 +1,42 @@
 <!DOCTYPE html>
 {% extends "base.html" %}
-{% block title %}Галерея{% endblock %}
+{% block title %}Панель управления врача{% endblock %}
 {% block content %}
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Панель управления врача</title>
-    <!-- Стили, скрипты и другие зависимости -->
-</head>
-<body>
-    <h1>Панель управления врача</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Имя</th>
-                <th>Фамилия</th>
-                <th>Возраст</th>
-                <th>Пол</th>
-                <th>Страна</th>
-                <th>Город</th>
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for patient in patients %}
-            <tr>
-                <td>{{ patient.first_name }}</td>
-                <td>{{ patient.last_name }}</td>
-                <td>{{ patient.age }}</td>
-                <td>{{ patient.gender }}</td>
-                <td>{{ patient.country }}</td>
-                <td>{{ patient.city }}</td>
-                <td>
-                    <a href="{{ url_for('doctor_patient_gallery', patient_id=patient.id) }}">Просмотреть галерею</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <!-- Дополнительный контент -->
-</body>
+<div class="doctor-dashboard">
+    <div class="doctor-dashboard-content">
+        <h1 class="dashboard-title">Панель управления врача</h1>
+        <table class="doctor-table">
+            <thead>
+                <tr>
+                    <th>Имя</th>
+                    <th>Фамилия</th>
+                    <th>Возраст</th>
+                    <th>Пол</th>
+                    <th>Страна</th>
+                    <th>Город</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td>{{ patient.first_name }}</td>
+                    <td>{{ patient.last_name }}</td>
+                    <td>{{ patient.age }}</td>
+                    {% if patient.gender == "male" %}
+                        <td>Мужчина</td>
+                    {% else %}
+                        <td>Женщина</td>
+                    {% endif %}
+                    <td>{{ patient.country }}</td>
+                    <td>{{ patient.city }}</td>
+                    <td>
+                        <a href="{{ url_for('doctor_patient_gallery', patient_id=patient.id) }}">Просмотреть галерею</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
-</html>

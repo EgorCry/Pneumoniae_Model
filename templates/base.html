@@ -2,18 +2,26 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
-    {% if current_user.is_authenticated %}
-    <div style="position: relative; left: 10px; margin-top: 25px">
-        Пользователь: {{ current_user.first_name }} {{ current_user.last_name }}
-        <form action="{{ url_for('logout') }}" method="post" style="margin-top: 5px">
-            <button type="submit">Выйти из аккаунта</button>
-        </form>
+    <div class="top-bar">
+        {% if current_user.is_authenticated %}
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Логотип" class="logo">
+            <div class="logo-title">ЛюксМед</div>
+            <div class="user-menu">
+                Пользователь: {{ current_user.first_name }} {{ current_user.last_name }}
+                <div class="user-submenu">
+                    <form action="{{ url_for('logout') }}" method="post">
+                        <button type="submit" class="logout-button">Выйти из аккаунта</button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
-    <div>
+    <div class="content">
         {% block content %}{% endblock %}
     </div>
 </body>
