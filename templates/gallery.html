@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+{% extends "base.html" %}
+{% block title %}Галерея{% endblock %}
+{% block content %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,12 +9,15 @@
     <style>
         .header {
             text-align: center;
-            margin-top: 20px; /* Или другой отступ, который вам нужен */
+            margin-top: 20px;
         }
         .gallery-container {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+        }
+        .alert {
+            color: red;
         }
         .image-card {
             flex-basis: calc(20% - 10px);
@@ -27,25 +33,56 @@
         .image-card p {
             font-size: 14px;
         }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .button-link {
+            padding: 10px 20px;
+            background-color: #3C9EE5; /* Светло-синий цвет */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-link:hover {
+            background-color: #2B3841; /* Темно-синий цвет */
+        }
     </style>
 </head>
 <body>
-    <div style="text-align: right; padding: 20px;">
-        <a href="{{ url_for('index') }}">Загрузить изображение</a>
+    <div class="navigation-buttons">
+        {% if is_doctor %}
+            <a href="{{ url_for('doctor_dashboard') }}" class="button-link">Вернуться к списку пациентов</a>
+        {% endif %}
+        {% if is_doctor %}
+            <a href="{{ url_for('upload_for_patient', patient_id=patient_id) }}" class="button-link">Загрузить изображение для пациента</a>
+        {% endif %}
     </div>
     <div class="header">
-        <h1>История пациента {{ username }}</h1>
+        <h1>История пациента {{ patient_name }}</h1>
     </div>
     <div class="gallery-container">
         {% for image in images %}
-        <div class="image-card" onclick="window.location.href='{{ url_for('show_image_info', nickname=username, image_number=image.number) }}'">
-            <img src="{{ url_for('user_images', filename=image.file_name) }}" alt="Изображение {{ image.number }}">
-            <p>Снимок: {{ image.number }}</p>
-            <p>{{ image.date }}</p>
-            <p>Вероятность: {{ image.probability }}</p>
-            <p>{{ image.result }}</p>
-        </div>
+            {% if is_doctor %}
+                <!-- Если пользователь - врач -->
+                <div class="image-card" onclick="window.location.href='{{ url_for('doctor_patient_image', user_id=image.user_id, image_number=image.number) }}'">
+            {% else %}
+                <!-- Если пользователь - пациент -->
+                <div class="image-card" onclick="window.location.href='{{ url_for('show_image_info', user_id=image.user_id, image_number=image.number) }}'">
+            {% endif %}
+                <img src="{{ url_for('user_images', filename=image.file_name) }}" alt="Изображение {{ image.number }}">
+                <p>Снимок: {{ image.number }}</p>
+                <p>{{ image.date }}</p>
+                <p>Вероятность: {{ image.probability }}</p>
+                <p>{{ image.result }}</p>
+            </div>
         {% endfor %}
     </div>
 </body>
+{% endblock %}
 </html>

@@ -12,6 +12,7 @@ Flask-Migrate==4.0.7
 Flask-SQLAlchemy==3.1.1
 flatbuffers==24.3.25
 gast==0.5.4
+git-filter-repo==2.38.0
 google-pasta==0.2.0
 greenlet==3.0.3
 grpcio==1.62.1

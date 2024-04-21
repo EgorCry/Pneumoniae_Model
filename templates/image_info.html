@@ -1,10 +1,22 @@
 <!DOCTYPE html>
+{% extends "base.html" %}
+{% block title %}Галерея{% endblock %}
+{% block content %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Image Info</title>
+    <title>Изображение</title>
     <style>
+        .back-button {
+            padding: 10px 20px;
+            background-color: #3C9EE5; /* Светло-синий цвет */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
         .container {
+            margin-top: 25px;
             display: flex;
             overflow-hidden;
         }
@@ -31,15 +43,27 @@
             <img src="{{ url_for('user_images', filename=info.image_path) }}" alt="Uploaded Image">
         </div>
         <div class="info-container">
-            <p>Имя пользователя: {{ info.username }}</p>
+            <p>Имя: {{ info.first_name }}</p>
+            <p>Фамилия: {{ info.last_name }}</p>
+            <p>Возраст: {{ info.age }}</p>
+            <p>Пол: {{ info.gender }}</p>
+            <p>Страна: {{ info.country }}</p>
+            <p>Город: {{ info.city }}</p>
             <p>{{ info.date }}</p>
             <p>{{ info.time }}</p>
             <p>Вероятность предсказания: {{ info.probability }}</p>
             <p>{{ info.result }}</p>
-            <div class="back-button-container" style="text-align: center; margin-top: 20px;">
-                <a href="{{ url_for('show_gallery') }}" class="back-button">Вернуться в галерею</a>
-            </div>
+            {% if is_doctor %}
+                <div class="back-button-container" style="text-align: center; margin-top: 20px;">
+                    <a href="{{ url_for('doctor_patient_gallery', patient_id=patient.id) }}" class="back-button">Вернуться в галерею</a>
+                </div>
+            {% else %}
+                <div class="back-button-container" style="text-align: center; margin-top: 20px;">
+                    <a href="{{ url_for('show_gallery') }}" class="back-button">Вернуться в галерею</a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </body>
+{% endblock %}
 </html>

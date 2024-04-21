@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+{% block content %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка изображения для пациента</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script>
+          function handleFileSelect(evt) {
+            var fileName = evt.target.files[0].name;
+            var fileNameDisplay = document.getElementById('file-name');
+            fileNameDisplay.textContent = fileName;
+            fileNameDisplay.style.display = 'block';
+          }
+          document.getElementById('file-upload').addEventListener('change', handleFileSelect, false);
+    </script>
+    <style>
+        .file-upload-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .file-upload-button {
+            padding: 10px 20px;
+            border: 2px solid #4CAF50; /* Цвет границы кнопки */
+            background-color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .file-upload-button:hover {
+            background-color: #4CAF50; /* Цвет фона кнопки при наведении */
+            color: #fff;
+        }
+
+        #file-name {
+            display: none;
+            padding: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .alert {
+            color: red;
+        }
+        .centered-content {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .file-input-container,
+        .submit-button-container {
+            margin: 10px auto;
+            padding: 10px;
+        }
+
+        .file-input,
+        .submit-button,
+        .back-button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .file-input {
+            display: inline-block;
+        }
+
+        .submit-button {
+            background-color: #2E8B57;
+            color: white;
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background-color: #3C9EE5; /* Светло-синий цвет */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover,
+        .submit-button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="centered-content">
+        <h2>Загрузка изображения для пациента</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        <form action="{{ url_for('upload_for_patient', patient_id=patient_id) }}" method="post" enctype="multipart/form-data" class="centered-content">
+            <div class="file-upload-wrapper">
+                <button type="button" onclick="document.getElementById('file-upload').click()" class="file-upload-button">Выбрать файл</button>
+                <input type="file" id="file-upload" name="image" class="file-input" style="display: none;">
+            </div>
+            <div>
+                <span id="file-name" style="display: none;">Файл не выбран.</span>
+            </div>
+            <div class="submit-button-container">
+                <input type="submit" value="Загрузить" class="submit-button">
+            </div>
+        </form>
+        <div>
+            <a href="{{ url_for('doctor_patient_gallery', patient_id=patient_id) }}" class="back-button">Вернуться в галерею</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('file-upload').onchange = function () {
+          var fileName = this.files[0].name;
+          var fileNameDisplay = document.getElementById('file-name');
+          fileNameDisplay.textContent = fileName;
+          fileNameDisplay.style.display = 'block';
+        };
+    </script>
+</body>
+{% endblock %}
+</html>

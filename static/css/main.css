@@ -1,0 +1,140 @@
+/* static/css/main.css */
+
+body {
+    margin-top: 40px; /* Нужно, чтобы полоска была достаточно отделена от других элементов */
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f4;
+    background: url('../images/dr_dashboard.png') no-repeat center center fixed;
+    background-size: cover;
+}
+
+.top-bar {
+    background-color: #3C9EE5; /* Темно-синий цвет */
+    padding: 5px 0;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.content {
+    padding-top: 60px;
+}
+
+.user-menu {
+    background-color: #f4f4f4;
+    color: #2B3841;
+    font-weight: bold;
+    border-radius: 5px;
+    margin-left: auto;
+    margin-right: 20px;
+    position: relative;
+    cursor: pointer;
+    padding: 10px 10px;
+    transition: background-color 0.3s;
+}
+
+.user-menu:hover .user-submenu {
+    display: block;
+}
+
+.user-submenu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: red;
+    box-shadow: 0 2px 5px rgba(0,0,0,.2);
+    border-radius: 3px;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.user-submenu a,
+.logout-button {
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+}
+
+.user-submenu a:hover,
+.logout-button:hover {
+    background-color: darkred;
+}
+
+.logout-button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: white;
+    display: block;
+}
+
+.logo {
+    max-height: 50px;
+    max-width: 100%;
+    margin-left: 25px
+}
+
+.logo-title {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: white;
+    margin: 0 15px;
+}
+
+.doctor-dashboard {
+    background-size: cover;
+    background-position: top center;
+    background-attachment: fixed;
+}
+
+.doctor-dashboard-content {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    margin: 0px auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 1200px;
+}
+
+.dashboard-title {
+    text-align: center;
+    margin-top: 0px;
+    margin-bottom: 20px;
+}
+
+.doctor-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.doctor-table th,
+.doctor-table td {
+    padding: 15px;
+    border-bottom: 1px solid #ccc;
+    vertical-align: middle;
+}
+
+.doctor-table thead th {
+    background-color: #eee;
+}
+
+.content {
+  position: relative;
+  background: #fff;
+  width: 80%;
+  margin: 0 auto;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}

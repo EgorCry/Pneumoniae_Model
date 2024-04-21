@@ -3,14 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>Вход в систему</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
 <body>
-    <h2>Вход в систему</h2>
-    <form action="/login" method="post">
-        <input type="text" name="username" placeholder="Имя пользователя" required>
-        <input type="password" name="password" placeholder="Пароль" required>
-        <input type="submit" value="Войти">
-    </form>
-    <a href="/register">Зарегистрироваться</a>
+    <div class="login-container">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Логотип" class="login-logo">
+        <h2>Вход в систему</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        <form action="/login" method="post" class="login-form">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Имя пользователя" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Пароль" required>
+            </div>
+            <div class="input-group">
+                <input type="submit" value="Войти" class="login-button">
+            </div>
+        </form>
+        <a href="/register" class="register-link">Зарегистрироваться</a>
+    </div>
 </body>
 </html>
